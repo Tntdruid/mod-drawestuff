@@ -1,0 +1,27 @@
+[worldserver]
+
+# DrawEstuff.Enable
+#     Description: Draws the guide marker an addon (AzerothQuest) asks for as a beam of light
+#                  in the world, visible only to that player.
+#     Default:     1 - (Enabled)
+#                  0 - (Disabled)
+DrawEstuff.Enable = 1
+
+# DrawEstuff.MarkerEntry
+#     Description: Gameobject template used for the marker. It must have the ScriptName
+#                  'DrawEstuffMarkerAI' (see data/sql/db-world). Change its displayId there
+#                  for another look.
+#     Default:     1990001
+DrawEstuff.MarkerEntry = 1990001
+
+# DrawEstuff.SpawnRange
+#     Description: Distance in yards at which the marker appears. It is removed again
+#                  50 yards further out.
+#     Default:     150
+DrawEstuff.SpawnRange = 150
+
+# DrawEstuff.Debug
+#     Description: Writes every marker request and spawn to the "module" log.
+#     Default:     0 - (Disabled)
+#                  1 - (Enabled)
+DrawEstuff.Debug = 0
