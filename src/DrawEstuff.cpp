@@ -49,7 +49,9 @@ namespace
             if (!area || area->zone)
                 continue;
 
-            if (name != area->area_name[locale] && name != area->area_name[LOCALE_enUS])
+            char const* localName = area->area_name[locale];
+            char const* englishName = area->area_name[LOCALE_enUS];
+            if (!(localName && name == localName) && !(englishName && name == englishName))
                 continue;
 
             MapEntry const* map = sMapStore.LookupEntry(area->mapid);
@@ -171,6 +173,8 @@ namespace
         }
 
         ai->SetOwner(player->GetGUID());
+        // A new gameobject has a 300 s respawn delay; without clearing it, isSpawned() is false and it stays invisible.
+        go->SetRespawnTime(0);
         go->SetSpawnedByDefault(false);
         go->SetVisibilityDistanceOverride(VisibilityDistanceType::Large);
         map->AddToMap(go);
