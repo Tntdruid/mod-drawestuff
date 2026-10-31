@@ -1,4 +1,6 @@
 #include "CellImpl.h"
+#include "Chat.h"
+#include "ChatCommand.h"
 #include "Config.h"
 #include "Creature.h"
 #include "DBCStores.h"
@@ -324,6 +326,31 @@ namespace
         return go->ActivateToQuest(player);
     }
 
+    // Every quest target within TargetRange, nearest first.
+    std::vector<std::pair<float, WorldObject*>> FindQuestTargets(Player* player)
+    {
+        std::list<Creature*> creatures;
+        std::list<GameObject*> objects;
+        Acore::AllWorldObjectsInRange check(player, sTargetRange);
+        Acore::CreatureListSearcher<Acore::AllWorldObjectsInRange> creatureSearcher(player, creatures, check);
+        Cell::VisitObjects(player, creatureSearcher, sTargetRange);
+        Acore::GameObjectListSearcher<Acore::AllWorldObjectsInRange> objectSearcher(player, objects, check);
+        Cell::VisitObjects(player, objectSearcher, sTargetRange);
+
+        std::vector<std::pair<float, WorldObject*>> found;
+        std::unordered_set<uint32> needed = GetNeededCreatures(player);
+        for (Creature* creature : creatures)
+            if (IsQuestTarget(player, creature, needed))
+                found.emplace_back(player->GetExactDist(creature), creature);
+
+        for (GameObject* go : objects)
+            if (IsQuestTarget(player, go))
+                found.emplace_back(player->GetExactDist(go), go);
+
+        std::sort(found.begin(), found.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
+        return found;
+    }
+
     void UpdateTargetMarkers(Player* player, Marker* marker)
     {
         if (!marker->targetsEnabled && marker->targets.empty())
@@ -334,24 +361,7 @@ namespace
 
         if (sQuestTargets && marker->targetsEnabled && player->IsAlive() && !player->IsInFlight())
         {
-            std::list<Creature*> creatures;
-            std::list<GameObject*> objects;
-            Acore::AllWorldObjectsInRange check(player, sTargetRange);
-            Acore::CreatureListSearcher<Acore::AllWorldObjectsInRange> creatureSearcher(player, creatures, check);
-            Cell::VisitObjects(player, creatureSearcher, sTargetRange);
-            Acore::GameObjectListSearcher<Acore::AllWorldObjectsInRange> objectSearcher(player, objects, check);
-            Cell::VisitObjects(player, objectSearcher, sTargetRange);
-
-            std::unordered_set<uint32> needed = GetNeededCreatures(player);
-            for (Creature* creature : creatures)
-                if (IsQuestTarget(player, creature, needed))
-                    found.emplace_back(player->GetExactDist(creature), creature);
-
-            for (GameObject* go : objects)
-                if (IsQuestTarget(player, go))
-                    found.emplace_back(player->GetExactDist(go), go);
-
-            std::sort(found.begin(), found.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
+            found = FindQuestTargets(player);
             if (found.size() > sMaxTargets)
                 found.resize(sMaxTargets);
         }
@@ -456,9 +466,64 @@ public:
     }
 };
 
+using namespace Acore::ChatCommands;
+
+// `.drawestuff`: what the module knows about the player, for when no beam shows and the log is out of reach.
+class DrawEstuffCommand : public CommandScript
+{
+public:
+    DrawEstuffCommand() : CommandScript("DrawEstuffCommand") {}
+
+    ChatCommandTable GetCommands() const override
+    {
+        static ChatCommandTable commandTable =
+        {
+            { "drawestuff", HandleStatusCommand, SEC_PLAYER, Console::No },
+        };
+        return commandTable;
+    }
+
+    static bool HandleStatusCommand(ChatHandler* handler)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+
+        handler->PSendSysMessage("DrawEstuff: module {}, quest targets {} (range {:.0f}, max {}).",
+            sEnabled ? "on" : "off", sQuestTargets ? "on" : "off", sTargetRange, sMaxTargets);
+
+        for (uint32 entry : { sMarkerEntry, sTargetEntry })
+        {
+            GameObjectTemplate const* info = sObjectMgr->GetGameObjectTemplate(entry);
+            if (!info)
+                handler->PSendSysMessage("Gameobject {}: MISSING - run data/sql/db-world/drawestuff_marker.sql.", entry);
+            else
+                handler->PSendSysMessage("Gameobject {}: display {}, size {:.2f}, script '{}'.", entry, info->displayId,
+                    info->size, sObjectMgr->GetScriptName(info->ScriptId));
+        }
+
+        Marker const* marker = player->CustomData.Get<Marker>(MARKER_KEY);
+        if (!marker)
+        {
+            handler->PSendSysMessage("Your addon has sent nothing yet. Restart WoW or /reload with AzerothQuest on.");
+            return true;
+        }
+
+        handler->PSendSysMessage("Guide beam: {}. Quest targets from the addon: {}, marked now: {}.",
+            marker->active ? (marker->goGuid ? "shown" : "set, waiting until you are near") : "none",
+            marker->targetsEnabled ? "on" : "off", marker->targets.size());
+
+        auto found = FindQuestTargets(player);
+        handler->PSendSysMessage("Quest targets within {:.0f} yards: {}.", sTargetRange, found.size());
+        for (size_t i = 0; i < found.size() && i < 5; ++i)
+            handler->PSendSysMessage("  {} ({:.0f} yards)", found[i].second->GetName(), found[i].first);
+
+        return true;
+    }
+};
+
 void AddDrawEstuffScripts()
 {
     new DrawEstuffWorld();
     new DrawEstuffPlayer();
+    new DrawEstuffCommand();
     RegisterGameObjectAI(DrawEstuffMarkerAI);
 }

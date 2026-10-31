@@ -69,6 +69,8 @@ For another look, change `displayId` in the SQL. The default, 3272, is the light
 
 In AzerothQuest, `/aq beam` turns the guide beam on or off and `/aq targets` the quest target beams. Both are on by default.
 
+When no beam shows, type `.drawestuff` in chat. It shows whether the module and its gameobject templates are there, what your addon has asked for, and the quest targets the server finds around you, so you can tell where it stops without the server log.
+
 ## Known limits
 
 - The beam is placed on the ground (terrain) height. Inside buildings or caves it can sit on the ground outside or below them.
