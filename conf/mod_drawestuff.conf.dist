@@ -20,6 +20,30 @@ DrawEstuff.MarkerEntry = 1990001
 #     Default:     150
 DrawEstuff.SpawnRange = 150
 
+# DrawEstuff.QuestTargets
+#     Description: Puts a slim beam on the nearest creatures and objects a quest in the
+#                  player's log still needs: mobs to kill, mobs that drop a needed quest item,
+#                  and objects to loot or use. Only for players whose addon asks for it.
+#     Default:     1 - (Enabled)
+#                  0 - (Disabled)
+DrawEstuff.QuestTargets = 1
+
+# DrawEstuff.TargetEntry
+#     Description: Gameobject template used for quest target markers (ScriptName
+#                  'DrawEstuffMarkerAI').
+#     Default:     1990002
+DrawEstuff.TargetEntry = 1990002
+
+# DrawEstuff.TargetRange
+#     Description: Distance in yards within which quest targets are marked.
+#     Default:     60
+DrawEstuff.TargetRange = 60
+
+# DrawEstuff.MaxTargets
+#     Description: How many of the nearest quest targets are marked at once.
+#     Default:     5
+DrawEstuff.MaxTargets = 5
+
 # DrawEstuff.Debug
 #     Description: Writes every marker request and spawn to the "module" log.
 #     Default:     0 - (Disabled)
