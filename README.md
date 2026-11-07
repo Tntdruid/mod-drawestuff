@@ -10,7 +10,7 @@ The 3.3.5a client cannot draw anything in the 3D world from an addon, so the add
 
 1. AzerothQuest sends the arrow's target as an addon message whispered to the player themself, with the prefix `AQDRAW`. The module takes that message, and it is never delivered.
 2. The module turns the zone and map percent into world coordinates, the same way `.go zonexy` does.
-3. When the player comes within `DrawEstuff.SpawnRange` yards, the module spawns gameobject `1990001` on the ground at that spot. The object's AI (`DrawEstuffMarkerAI`) lets only its owner see it.
+3. When the player comes within `DrawEstuff.SpawnRange` yards, the module spawns gameobject `1990001`, a silent glowing column, on the ground at that spot. The object's AI (`DrawEstuffMarkerAI`) lets only its owner see it.
 4. A new target replaces the beam. The beam is also removed when the guide has no target, when the player moves more than 50 yards beyond the spawn range, leaves the map or logs out.
 
 ### Quest targets
@@ -63,7 +63,18 @@ DrawEstuff.MaxTargets = 5      # nearest quest targets marked at once
 DrawEstuff.Debug = 0           # 1 logs every request and spawn to the "module" log
 ```
 
-For another look, change `displayId` in the SQL. The default, 3272, is the light beam of "Uther Shrine Lightbeam". If the beam is hard to see, try another display there.
+The guide marker is the Night Elf flag capture glow of Warsong Gulch (display 7258), and the quest target markers the smaller Orc one (display 7086). Both are silent. The first version used the "Uther Shrine Lightbeam" (display 3272), which hums.
+
+For another look, change `displayId` or `size` in the SQL. The client caches gameobject looks, so after a change delete the client's `Cache` folder before logging in, or the old look stays. Silent column-like displays from the 3.3.5 client:
+
+| Display | Height at size 1 | Model |
+| --- | --- | --- |
+| 7258 | 14.6 | Warsong Gulch Night Elf flag capture glow |
+| 7086 | 14.6 | Warsong Gulch Orc flag capture glow |
+| 6813 | 14.2 | Stranglethorn light shaft |
+| 7116 | 22.1 | Terokkar light ray |
+| 6231 | 22.5 | Westfall lighthouse beam |
+| 5456 | 36.8 | Volumetric light shaft |
 
 ## In the game
 
